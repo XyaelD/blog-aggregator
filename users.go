@@ -11,7 +11,7 @@ import (
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type createUserRequest struct {
-		Name string `json:"name"`
+		Name string
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -44,9 +44,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "Couldnt create user")
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, createdUser)
+	respondWithJSON(w, http.StatusCreated, dbUserToUser(createdUser))
 }
 
 func (cfg *apiConfig) handlerGetUserByApiKey(w http.ResponseWriter, r *http.Request, authedUser database.User) {
-	respondWithJSON(w, http.StatusOK, authedUser)
+	respondWithJSON(w, http.StatusOK, dbUserToUser(authedUser))
 }

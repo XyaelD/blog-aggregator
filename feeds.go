@@ -63,13 +63,13 @@ func (cfg *apiConfig) handlerCreateFeed(w http.ResponseWriter, r *http.Request, 
 	}
 
 	type feedAndFollow struct {
-		Feed       database.Feed       `json:"feed"`
-		FeedFollow database.FeedFollow `json:"feed_follow"`
+		Feed       Feed       `json:"feed"`
+		FeedFollow FeedFollow `json:"feed_follow"`
 	}
 
 	results := feedAndFollow{
-		Feed:       createdFeed,
-		FeedFollow: createdFeedFollow,
+		Feed:       dbFeedtoFeed(createdFeed),
+		FeedFollow: dbFeedFollowToFeedFollow(createdFeedFollow),
 	}
 	respondWithJSON(w, http.StatusCreated, results)
 }
@@ -81,5 +81,50 @@ func (cfg *apiConfig) handlerGetAllFeeds(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Couldnt retreive all feeds")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, allFeeds)
+	respondWithJSON(w, http.StatusOK, dbFeedsToFeeds(allFeeds))
 }
+
+//////////////
+
+// func (cfg *apiConfig) fetchNextFeeds(limit int) ([]Feed, error) {
+// 	ctx := context.Background()
+// 	fetchedFeeds, err := cfg.DB.GetNextFeedsToFetch(ctx, int32(limit))
+// 	if err != nil {
+// 		return []Feed{}, err
+// 	}
+// 	modifiedFeeds := []Feed{}
+// 	for _, feed := range fetchedFeeds {
+// 		feedToAdd := dbFeedtoFeed(feed)
+// 		modifiedFeeds = append(modifiedFeeds, feedToAdd)
+// 	}
+// 	return modifiedFeeds, nil
+// }
+
+// func (cfg *apiConfig) feedWorker(limit int) {
+// 	ticker := time.NewTicker(60 * time.Second)
+// 	defer ticker.Stop()
+
+// 	for tickTime := range ticker.C {
+// 		fmt.Println("Tick at", tickTime)
+// 		fetchedFeeds, err := cfg.fetchNextFeeds(limit)
+// 		if err != nil {
+// 			fmt.Printf("Error fetching feeds: %v\n", err)
+// 			return
+// 		}
+
+// 		var wg sync.WaitGroup
+// 		for _, feed := range fetchedFeeds {
+// 			wg.Add(1)
+// 			go func(xmlURL string) {
+// 				defer wg.Done()
+// 				currRss, err := fetchDataFromFeed(xmlURL)
+// 				if err != nil {
+// 					log.Printf("Error fetching data from feed %s: %v\n", xmlURL, err)
+// 					return
+// 				}
+// 				fmt.Printf("The current RSS title: %v\n", currRss.Channel.Title)
+// 			}(feed.Url)
+// 		}
+// 		wg.Wait()
+// 	}
+// }

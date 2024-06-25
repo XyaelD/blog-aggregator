@@ -11,7 +11,7 @@ import (
 
 func (cfg *apiConfig) handlerCreateFeedFollow(w http.ResponseWriter, r *http.Request, authedUser database.User) {
 	type createFeedFollowRequest struct {
-		FeedId string `json:"feed_id"`
+		FeedId uuid.UUID //`json:"feed_id"`
 	}
 
 	ctx := r.Context()
@@ -25,33 +25,33 @@ func (cfg *apiConfig) handlerCreateFeedFollow(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if createRequest.FeedId == "" {
-		respondWithError(w, http.StatusBadRequest, "request has empty values")
-		return
-	}
+	// if createRequest.FeedId == "" {
+	// 	respondWithError(w, http.StatusBadRequest, "request has empty values")
+	// 	return
+	// }
 
-	createRequestUUID, err := uuid.Parse(createRequest.FeedId)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "cannot parse request to UUID")
-		return
-	}
+	// createRequestUUID, err := uuid.Parse(createRequest.FeedId)
+	// if err != nil {
+	// 	respondWithError(w, http.StatusBadRequest, "cannot parse request to UUID")
+	// 	return
+	// }
 
-	exists := false
-	allFeeds, err := cfg.DB.GetAllFeeds(ctx)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "cannot check feeds in database")
-		return
-	}
-	for _, feed := range allFeeds {
-		if feed.ID == createRequestUUID {
-			exists = true
-			break
-		}
-	}
-	if !exists {
-		respondWithError(w, http.StatusBadRequest, "requested feed does not exist in the db")
-		return
-	}
+	// exists := false
+	// allFeeds, err := cfg.DB.GetAllFeeds(ctx)
+	// if err != nil {
+	// 	respondWithError(w, http.StatusInternalServerError, "cannot check feeds in database")
+	// 	return
+	// }
+	// for _, feed := range allFeeds {
+	// 	if feed.ID == createRequestUUID {
+	// 		exists = true
+	// 		break
+	// 	}
+	// }
+	// if !exists {
+	// 	respondWithError(w, http.StatusBadRequest, "requested feed does not exist in the db")
+	// 	return
+	// }
 
 	feedFollowUUID := uuid.New()
 	currTime := time.Now().UTC()
@@ -61,14 +61,14 @@ func (cfg *apiConfig) handlerCreateFeedFollow(w http.ResponseWriter, r *http.Req
 		CreatedAt: currTime,
 		UpdatedAt: currTime,
 		UserID:    authedUser.ID,
-		FeedID:    createRequestUUID,
+		FeedID:    createRequest.FeedId,
 	}
 	createdFeedFollow, err := cfg.DB.CreateFeedFollow(ctx, newFeedFollow)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldnt create feed follow")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, createdFeedFollow)
+	respondWithJSON(w, http.StatusOK, dbFeedFollowToFeedFollow(createdFeedFollow))
 }
 
 func (cfg *apiConfig) handlerDeleteFeedFollow(w http.ResponseWriter, r *http.Request, authedUser database.User) {
@@ -94,6 +94,8 @@ func (cfg *apiConfig) handlerDeleteFeedFollow(w http.ResponseWriter, r *http.Req
 	respondWithCode(w, http.StatusNoContent)
 }
 
+////////
+
 func (cfg *apiConfig) handlerGetFeedFollowsForUser(w http.ResponseWriter, r *http.Request, authedUser database.User) {
 	ctx := r.Context()
 	feedFollows, err := cfg.DB.GetFeedFollowsForUser(ctx, authedUser.ID)
@@ -101,5 +103,5 @@ func (cfg *apiConfig) handlerGetFeedFollowsForUser(w http.ResponseWriter, r *htt
 		respondWithError(w, http.StatusInternalServerError, "cannot fetch feed follows from db")
 		return
 	}
-	respondWithJSON(w, http.StatusFound, feedFollows)
+	respondWithJSON(w, http.StatusFound, dbFeedFollowsToFeedFollows(feedFollows))
 }

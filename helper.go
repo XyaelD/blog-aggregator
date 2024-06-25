@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+
+	"github.com/lib/pq"
 )
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -33,4 +36,15 @@ func respondWithError(w http.ResponseWriter, code int, msg string) {
 
 func respondWithCode(w http.ResponseWriter, code int) {
 	w.WriteHeader(code)
+}
+
+func isUniqueViolationError(err error) bool {
+	var sqlErr *pq.Error
+	if errors.As(err, &sqlErr) {
+		// PostgreSQL unique constraint violation
+		if sqlErr.Code == "23505" {
+			return true
+		}
+	}
+	return false
 }
